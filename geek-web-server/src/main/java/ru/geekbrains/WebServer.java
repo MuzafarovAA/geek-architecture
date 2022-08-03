@@ -6,7 +6,7 @@ import java.net.Socket;
 
 public class WebServer {
 
-    private static String WWW = "/Users/aleks/dev/geek-architecture-02/www";
+    private static final String WWW = "www/";
 
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(8088)) {
