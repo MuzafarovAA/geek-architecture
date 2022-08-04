@@ -16,12 +16,6 @@ public class RequestHandler implements Runnable {
 
     private final String folder;
 
-    private final RequestParser requestParser = new RequestParser();
-
-    private final FileManager fileManager = new FileManager();
-
-    private final ResponseProvider responseProvider = new ResponseProvider();
-
     public RequestHandler(Socket socket, String folder) {
         this.socket = socket;
         this.folder = folder;
@@ -34,18 +28,30 @@ public class RequestHandler implements Runnable {
                         socket.getInputStream(), StandardCharsets.UTF_8));
              PrintWriter output = new PrintWriter(socket.getOutputStream())
         ) {
+            while (!input.ready());
 
-            String[] parts = requestParser.doParse(input);
-
-            Path path = Paths.get(folder, parts[1]);
-
-            if (!fileManager.isFileExist(path)) {
-               responseProvider.response(404, output);
-            } else {
-               responseProvider.response(200, output);
+            String firstLine = input.readLine();
+            String[] parts = firstLine.split(" ");
+            System.out.println(firstLine);
+            while (input.ready()) {
+                System.out.println(input.readLine());
             }
 
-            fileManager.transfer(path, output);
+            Path path = Paths.get(folder, parts[1]);
+            if (!Files.exists(path)) {
+                output.println("HTTP/1.1 404 NOT_FOUND");
+                output.println("Content-Type: text/html; charset=utf-8");
+                output.println();
+                output.println("<h1>Файл не найден!</h1>");
+                output.flush();
+                return;
+            }
+
+            output.println("HTTP/1.1 200 OK");
+            output.println("Content-Type: text/html; charset=utf-8");
+            output.println();
+
+            Files.newBufferedReader(path).transferTo(output);
 
             System.out.println("Client disconnected!");
         } catch (IOException e) {
