@@ -1,17 +1,30 @@
 package ru.geekbrains;
 
-import java.io.BufferedReader;
-import java.io.IOException;
+import ru.geekbrains.domain.HttpRequest;
+
+import java.util.Deque;
 
 public class RequestParser {
 
-    public String[] doParse(BufferedReader input) throws IOException {
-        String firstLine = input.readLine();
-        String[] parts = firstLine.split(" ");
-        System.out.println(firstLine);
-        while (input.ready()) {
-            System.out.println(input.readLine());
+    public HttpRequest parse(Deque<String> rawRequest) {
+        HttpRequest httpRequest = new HttpRequest();
+        String[] firstLine = rawRequest.pollFirst().split(" ");
+        httpRequest.setMethod(firstLine[0]);
+        httpRequest.setUrl(firstLine[1]);
+
+        while (!rawRequest.isEmpty()) {
+            String line = rawRequest.pollFirst();
+            if (line.isBlank()) {
+                break;
+            }
+            String[] header = line.split(": ");
+            httpRequest.getHeaders().put(header[0], header[1]);
         }
-        return parts;
+        StringBuilder sb = new StringBuilder();
+        while (!rawRequest.isEmpty()) {
+            sb.append(rawRequest.pollFirst());
+        }
+        httpRequest.setBody(sb.toString());
+        return httpRequest;
     }
 }

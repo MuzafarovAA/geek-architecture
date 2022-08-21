@@ -1,55 +1,57 @@
 package ru.geekbrains;
 
-import java.io.BufferedReader;
+import ru.geekbrains.domain.HttpRequest;
+import ru.geekbrains.domain.HttpResponse;
+import ru.geekbrains.service.FileService;
+import ru.geekbrains.service.SocketService;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Deque;
 
 public class RequestHandler implements Runnable {
 
-    private final Socket socket;
+    private final SocketService socketService;
 
-    private final String folder;
+    private final FileService fileService;
+    private final RequestParser requestParser;
+    private final ResponseSerializer responseSerializer;
 
-    private final RequestParser requestParser = new RequestParser();
-
-    private final FileManager fileManager = new FileManager();
-
-    private final ResponseProvider responseProvider = new ResponseProvider();
-
-    public RequestHandler(Socket socket, String folder) {
-        this.socket = socket;
-        this.folder = folder;
+    public RequestHandler(SocketService socketService,
+                          FileService fileService,
+                          RequestParser requestParser,
+                          ResponseSerializer responseSerializer) {
+        this.socketService = socketService;
+        this.fileService = fileService;
+        this.requestParser = requestParser;
+        this.responseSerializer = responseSerializer;
     }
 
     @Override
     public void run() {
-        try (BufferedReader input = new BufferedReader(
-                new InputStreamReader(
-                        socket.getInputStream(), StandardCharsets.UTF_8));
-             PrintWriter output = new PrintWriter(socket.getOutputStream())
-        ) {
+        Deque<String> rawRequest = socketService.readRequest();
+        HttpRequest req = requestParser.parse(rawRequest);
 
-            String[] parts = requestParser.doParse(input);
-
-            Path path = Paths.get(folder, parts[1]);
-
-            if (!fileManager.isFileExist(path)) {
-               responseProvider.response(404, output);
-            } else {
-               responseProvider.response(200, output);
-            }
-
-            fileManager.transfer(path, output);
-
-            System.out.println("Client disconnected!");
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (!fileService.exists(req.getUrl())) {
+            HttpResponse resp = new HttpResponse();
+            resp.setStatusCode(404);
+            resp.setStatusCodeName("NOT_FOUND");
+            resp.getHeaders().put("Content-Type", "text/html; charset=utf-8");
+            socketService.writeResponse(responseSerializer.serialize(resp));
+            return;
         }
+
+        HttpResponse resp = new HttpResponse();
+        resp.setStatusCode(200);
+        resp.setStatusCodeName("OK");
+        resp.getHeaders().put("Content-Type", "text/html; charset=utf-8");
+        resp.setBody(fileService.readFile(req.getUrl()));
+        socketService.writeResponse(responseSerializer.serialize(resp));
+
+        try {
+            socketService.close();
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
+        System.out.println("Client disconnected!");
     }
 }
