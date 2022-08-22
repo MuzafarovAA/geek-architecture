@@ -8,7 +8,6 @@ import ru.geekbrains.service.SocketService;
 import java.io.IOException;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.Map;
 
 public class RequestHandler implements Runnable {
 
@@ -32,24 +31,25 @@ public class RequestHandler implements Runnable {
     public void run() {
         Deque<String> rawRequest = socketService.readRequest();
         HttpRequest req = requestParser.parse(rawRequest);
-        Map<String, String> headers = new HashMap<>();
 
         if (!fileService.exists(req.getUrl())) {
-            headers.put("Content-Type", "text/html; charset=utf-8");
             HttpResponse resp = HttpResponse.createBuilder()
                     .withStatusCode(404)
                     .withStatusCodeName("NOT_FOUND")
-                    .withHeaders(headers)
+                    .withHeaders(new HashMap<>() {{
+                        put("Content-Type", "text/html; charset=utf-8");
+                    }})
                     .build();
             socketService.writeResponse(responseSerializer.serialize(resp));
             return;
         }
 
-        headers.put("Content-Type", "text/html; charset=utf-8");
         HttpResponse resp = HttpResponse.createBuilder()
                 .withStatusCode(200)
                 .withStatusCodeName("OK")
-                .withHeaders(headers)
+                .withHeaders(new HashMap<>() {{
+                    put("Content-Type", "text/html; charset=utf-8");
+                }})
                 .withBody(fileService.readFile(req.getUrl()))
                 .build();
         socketService.writeResponse(responseSerializer.serialize(resp));
