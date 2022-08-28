@@ -3,14 +3,15 @@ package ru.geekbrains;
 import ru.geekbrains.domain.HttpRequest;
 
 import java.util.Deque;
-import java.util.HashMap;
-import java.util.Map;
 
 public class RequestParser {
 
     public HttpRequest parse(Deque<String> rawRequest) {
+        HttpRequest.Builder builder = HttpRequest.createBuilder();
         String[] firstLine = rawRequest.pollFirst().split(" ");
-        Map<String, String> headers = new HashMap<>();
+        builder
+                .withMethod(firstLine[0])
+                .withUrl(firstLine[1]);
 
         while (!rawRequest.isEmpty()) {
             String line = rawRequest.pollFirst();
@@ -18,19 +19,13 @@ public class RequestParser {
                 break;
             }
             String[] header = line.split(": ");
-            headers.put(header[0], header[1]);
+            builder.withHeader(header[0], header[1]);
         }
         StringBuilder sb = new StringBuilder();
         while (!rawRequest.isEmpty()) {
             sb.append(rawRequest.pollFirst());
         }
-
-        HttpRequest httpRequest = HttpRequest.createBuilder()
-                .withBody(sb.toString())
-                .withHeaders(headers)
-                .withMethod(firstLine[0])
-                .withUrl(firstLine[1])
-                .build();
-        return httpRequest;
+        builder.withBody(sb.toString());
+        return builder.build();
     }
 }

@@ -38,35 +38,33 @@ public class HttpResponse {
 
     public static class Builder {
 
-        private final HttpResponse httpResponse;
-
-        public Builder() {
-            this.httpResponse = new HttpResponse();
-        }
+        private final HttpResponse response = new HttpResponse();
 
         public Builder withStatusCode(int statusCode) {
-            this.httpResponse.statusCode = statusCode;
+            this.response.statusCode = statusCode;
             return this;
         }
 
         public Builder withStatusCodeName(String statusCodeName) {
-            this.httpResponse.statusCodeName = statusCodeName;
+            this.response.statusCodeName = statusCodeName;
             return this;
         }
 
-        public Builder withHeaders(Map<String, String> headers) {
-            this.httpResponse.headers = headers;
+        public Builder withHeader(String key, String value) {
+            this.response.getHeaders().put(key, value);
             return this;
         }
 
         public Builder withBody(String body) {
-            this.httpResponse.body = body;
+            this.response.body = body;
             return this;
         }
 
         public HttpResponse build() {
-            return httpResponse;
+            if (this.response.statusCodeName == null) {
+                throw new IllegalStateException("Status code not defined");
+            }
+            return response;
         }
-
     }
 }

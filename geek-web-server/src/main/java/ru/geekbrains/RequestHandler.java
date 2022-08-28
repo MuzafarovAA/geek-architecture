@@ -7,7 +7,6 @@ import ru.geekbrains.service.SocketService;
 
 import java.io.IOException;
 import java.util.Deque;
-import java.util.HashMap;
 
 public class RequestHandler implements Runnable {
 
@@ -34,24 +33,20 @@ public class RequestHandler implements Runnable {
 
         if (!fileService.exists(req.getUrl())) {
             HttpResponse resp = HttpResponse.createBuilder()
-                    .withStatusCode(404)
-                    .withStatusCodeName("NOT_FOUND")
-                    .withHeaders(new HashMap<>() {{
-                        put("Content-Type", "text/html; charset=utf-8");
-                    }})
-                    .build();
+                .withStatusCode(404)
+                .withStatusCodeName("NOT_FOUND")
+                .withHeader("Content-Type", "text/html; charset=utf-8")
+                .build();
             socketService.writeResponse(responseSerializer.serialize(resp));
             return;
         }
 
         HttpResponse resp = HttpResponse.createBuilder()
-                .withStatusCode(200)
-                .withStatusCodeName("OK")
-                .withHeaders(new HashMap<>() {{
-                    put("Content-Type", "text/html; charset=utf-8");
-                }})
-                .withBody(fileService.readFile(req.getUrl()))
-                .build();
+                        .withStatusCode(200)
+                        .withStatusCodeName("OK")
+                        .withHeader("Content-Type", "text/html; charset=utf-8")
+                        .withBody(fileService.readFile(req.getUrl()))
+                        .build();
         socketService.writeResponse(responseSerializer.serialize(resp));
 
         try {
