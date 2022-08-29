@@ -72,7 +72,7 @@ public class Main {
 
     }
 
-    public static void compositeExamples() {
+    private static void compositeExamples() {
 
         Employee john = new Developer("John Doe", 12000);
         Employee jane = new Designer("Jane Doe", 15000);
