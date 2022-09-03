@@ -17,7 +17,7 @@ public class UserRepository {
         this.unitOfWork = new UnitOfWork(mapper);
     }
 
-    public Optional<User> findById(int id) {
+    public Optional<User> findById(Long id) {
         return mapper.findById(id);
     }
 
